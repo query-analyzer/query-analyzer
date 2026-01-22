@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags-ignore:
+      - 'v*'
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and Test
+        run: mvn -B clean verify

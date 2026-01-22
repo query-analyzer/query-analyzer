@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.1)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+          server-id: central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in POMs
+        run: mvn -B versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Update version in docs
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # README.md
+          sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" README.md
+          sed -i "s/query-analyzer-spring-boot-starter:.*'/query-analyzer-spring-boot-starter:${VERSION}'/g" README.md
+          # docs/GETTING_STARTED.md
+          sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" docs/GETTING_STARTED.md
+          sed -i "s/query-analyzer-spring-boot-starter:.*'/query-analyzer-spring-boot-starter:${VERSION}'/g" docs/GETTING_STARTED.md
+
+      - name: Build and Test
+        run: mvn -B clean verify
+
+      - name: Publish to Maven Central
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn -B deploy -Prelease -DskipTests
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## Query Analyzer ${{ steps.version.outputs.version }}
+            
+            ### Maven
+            ```xml
+            <dependency>
+                <groupId>io.github.query-analyzer</groupId>
+                <artifactId>query-analyzer-spring-boot-starter</artifactId>
+                <version>${{ steps.version.outputs.version }}</version>
+            </dependency>
+            ```
+            
+            ### Gradle
+            ```gradle
+            implementation 'io.github.query-analyzer:query-analyzer-spring-boot-starter:${{ steps.version.outputs.version }}'
+            ```
+          generate_release_notes: true

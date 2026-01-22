@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: query-analyzer-postgres-example
+  
+  datasource:
+    url: jdbc:postgresql://postgres:5432/queryanalyzer
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8080
+
+logging:
+  level:
+    io.queryanalyzer: DEBUG
+    org.hibernate.SQL: ERROR
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+
+query-analyzer:
+  metrics:
+    enabled: true
+  enabled: true
+  detection:
+    n-plus-one:
+      enabled: true
+      min-queries: 3
+      min-confidence: 50
+  reporter:
+    colors: true
+    suggestions: true
+    metrics: true
+    minimum-severity: INFO

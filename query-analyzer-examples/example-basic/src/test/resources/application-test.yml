@@ -1,0 +1,60 @@
+# Test profile configuration
+spring:
+  application:
+    name: query-analyzer-example-test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+# Query Analyzer configuration for tests
+query-analyzer:
+  enabled: true
+  profile: STRICT  # Use strict mode in tests to catch more issues
+  
+  detection:
+    n-plus-one: true
+    slow-queries: true
+    mode: CONFIDENCE
+    min-confidence: 0.5
+    
+  thresholds:
+    info: 5
+    warning: 20
+    error: 50
+    critical: 200
+    
+  reporter:
+    colors: false  # Disable colors in test output
+    suggestions: true
+    metrics: true
+    minimum-severity: INFO
+    
+  metrics:
+    enabled: true
+    
+  plan:
+    enabled: false  # Disable plan analysis in tests for speed
+
+# Reduce logging noise in tests
+logging:
+  level:
+    io.queryanalyzer: INFO
+    org.hibernate.SQL: ERROR
+    org.hibernate.type: ERROR
+    org.springframework: WARN

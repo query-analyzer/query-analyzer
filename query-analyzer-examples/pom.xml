@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.github.query-analyzer</groupId>
+    <artifactId>query-analyzer-parent</artifactId>
+    <version>1.2.0</version>
+  </parent>
+
+  <artifactId>query-analyzer-examples</artifactId>
+  <packaging>pom</packaging>
+
+  <name>Query Analyzer Examples</name>
+  <description>Reference implementations demonstrating Query Analyzer capabilities</description>
+
+  <!-- Examples should not be published to Maven Central -->
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+
+  <modules>
+    <module>example-basic</module>
+    <module>example-postgres</module>
+  </modules>
+</project>

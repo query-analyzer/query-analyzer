@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: query-analyzer-example
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+query-analyzer:
+  enabled: true
+  metrics:
+    enabled: true
+  detection:
+    n-plus-one: true
+    slow-queries: true
+  thresholds:
+    info: 10
+    warning: 50
+    error: 200
+    critical: 1000
+  reporter:
+    colors: true
+    suggestions: true
+    metrics: true
+    minimum-severity: INFO
+
+logging:
+  level:
+    io.queryanalyzer: DEBUG
+    org.hibernate.SQL: ERROR
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR

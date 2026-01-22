@@ -1,0 +1,45 @@
+# Test Configuration for Query Analyzer
+# This demonstrates the profile-based configuration
+
+query-analyzer:
+  enabled: true
+  
+  # Profile selection (default is BALANCED)
+  profile: balanced
+  
+  detection:
+    n-plus-one: true
+    slow-queries: true
+    show-confidence: true
+  
+  thresholds:
+    info: 50
+    warning: 200
+    error: 500
+    critical: 2000
+  
+  reporter:
+    colors: true
+    suggestions: true
+    metrics: true
+    minimum-severity: INFO
+  
+  metrics:
+    enabled: false
+
+# Spring configuration for tests
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+logging:
+  level:
+    io.queryanalyzer: DEBUG
