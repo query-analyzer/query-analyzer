@@ -54,8 +54,8 @@ jobs:
             <servers>
               <server>
                 <id>central</id>                 
-                <username>\${env.MAVEN_USERNAME}</username>
-                <password>\${env.MAVEN_PASSWORD}</password>
+                <username>\${env.MAVEN_CENTRAL_USERNAME}</username>
+                <password>\${env.MAVEN_CENTRAL_PASSWORD}</password>
               </server>
             </servers>
           </settings>
