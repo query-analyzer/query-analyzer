@@ -28,7 +28,23 @@ jobs:
           cache: maven
 
       - name: Import GPG key
-        run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+        env:
+          GPG_KEY_BASE64: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          if [ -z "$GPG_KEY_BASE64" ]; then
+            echo "ERROR: GPG_PRIVATE_KEY secret is empty or not set!"
+            exit 1
+          fi
+          
+          echo "Base64 length: ${#GPG_KEY_BASE64} characters"
+          
+          echo "$GPG_KEY_BASE64" | base64 --decode > /tmp/key.asc
+          gpg --batch --import /tmp/key.asc || { echo "Import failed - showing decoded content (first/last lines):"; head -n 5 /tmp/key.asc; tail -n 5 /tmp/key.asc; exit 1; }
+          
+          echo "Imported secret keys:"
+          gpg --list-secret-keys --keyid-format LONG
+          
+          rm -f /tmp/key.asc
 
       - name: Configure Maven settings
         run: |
