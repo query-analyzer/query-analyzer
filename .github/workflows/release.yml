@@ -49,8 +49,17 @@ jobs:
       - name: Configure Maven settings
         run: |
           mkdir -p ~/.m2
-          echo '<settings><servers><server><id>central</id><username>${env.MAVEN_USERNAME}</username><password>${env.MAVEN_PASSWORD}</password></server></servers></settings>' > ~/.m2/settings.xml
-
+          cat > ~/.m2/settings.xml << EOF
+          <settings>
+            <servers>
+              <server>
+                <id>ossrh</id>                 
+                <username>\${env.MAVEN_USERNAME}</username>
+                <password>\${env.MAVEN_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
       - name: Get version
         id: version
         run: |
