@@ -80,9 +80,9 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" README.md
-          sed -i "s/query-analyzer-spring-boot-starter:.*'/query-analyzer-spring-boot-starter:${VERSION}'/g" README.md
-          sed -i "s/<version>.*<\/version>/<version>${VERSION}<\/version>/g" docs/GETTING_STARTED.md
-          sed -i "s/query-analyzer-spring-boot-starter:.*'/query-analyzer-spring-boot-starter:${VERSION}'/g" docs/GETTING_STARTED.md
+          sed -i "s|<artifactId>query-analyzer-spring-boot-starter</artifactId>\s*\n\s*<version>[^<]*</version>|<artifactId>query-analyzer-spring-boot-starter</artifactId>\n    <version>${VERSION}</version>|g" README.md
+          sed -i "s|query-analyzer-spring-boot-starter:[0-9.]*'|query-analyzer-spring-boot-starter:${VERSION}'|g" README.md
+          sed -i "s|query-analyzer-spring-boot-starter:[0-9.]*'|query-analyzer-spring-boot-starter:${VERSION}'|g" docs/GETTING_STARTED.md
 
       - name: Build and Test
         run: mvn -B clean verify
