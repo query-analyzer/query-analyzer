@@ -130,6 +130,40 @@ Overhead (coarse wall-clock; use deltas, not absolutes):
 
 This supports the project's "<3 ms / <1%" claim with headroom.
 
+### Controlled study: what does the confidence model add? (`ModeStudyTest`)
+
+On the accuracy benchmark above, THRESHOLD and CONFIDENCE both score F1=1.00, so that
+benchmark alone does not justify the confidence machinery. This controlled experiment
+(synthetic micro-traces with crafted stack frames and timestamps, verdicts produced by
+the real detector) isolates its contribution. The key extra case is **scattered
+repeats**: the same query issued from several different call sites in one request (e.g.
+shared reference data read by multiple services) - legitimate, but a pure count
+threshold flags it as N+1.
+
+**Mode comparison**
+
+| Mode | Precision | Recall | F1 |
+|---|---|---|---|
+| THRESHOLD | 0.60 | 1.00 | 0.75 |
+| CONFIDENCE | 1.00 | 1.00 | 1.00 |
+| HYBRID | 1.00 | 1.00 | 1.00 |
+
+The confidence model removes the false positives that pure count-thresholding produces.
+
+**Ablation (zero one signal, renormalise weights)** - each signal earns its place:
+
+| Configuration | Precision | Recall | F1 |
+|---|---|---|---|
+| full model | 1.00 | 1.00 | 1.00 |
+| no stack signal | 0.60 | 1.00 | 0.75 |
+| no timing signal | 1.00 | 0.67 | 0.80 |
+| no pattern signal | 1.00 | 0.67 | 0.80 |
+
+Removing the stack signal costs precision; removing timing or pattern costs recall.
+
+**Threshold sensitivity** - F1 peaks across 0.4-0.5, empirically justifying the default
+of 0.5 (below it precision falls; above it recall falls). See `target/benchmark-mode-study.md`.
+
 > **Note on the pagination fix.** The first run of this benchmark exposed a real
 > bug: query-analyzer's pagination suppression keyed on a *literal* `OFFSET n`, but
 > Hibernate emits offsets as bind parameters (`offset ? rows fetch first ? rows
