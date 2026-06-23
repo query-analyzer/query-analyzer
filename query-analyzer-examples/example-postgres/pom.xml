@@ -8,7 +8,7 @@
     <parent>
         <groupId>io.github.query-analyzer</groupId>
         <artifactId>query-analyzer-examples</artifactId>
-        <version>1.2.4</version>
+        <version>1.2.5</version>
     </parent>
 
     <artifactId>example-postgres</artifactId>
