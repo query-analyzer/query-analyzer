@@ -8,15 +8,7 @@ public final class SqlNormalizer {
 
     // Matches string literals including escaped quotes
     private static final Pattern STRING_PATTERN = Pattern.compile("'(?:''|[^'])*'");
-    
-    // Matches numbers that should be replaced (not after LIMIT/OFFSET/FETCH/TOP)
-    // Uses negative lookbehind to preserve pagination values
-    private static final Pattern REPLACEABLE_NUMBER_PATTERN = Pattern.compile(
-        "(?<!LIMIT\\s)(?<!LIMIT\\s\\s)(?<!OFFSET\\s)(?<!OFFSET\\s\\s)" +
-        "(?<!FETCH\\s)(?<!FETCH\\s\\s)(?<!TOP\\s)(?<!TOP\\s\\s)" +
-        "(?<!_)\\b\\d+\\b(?!_)"
-    );
-    
+
     // Matches multiple whitespace
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
     
