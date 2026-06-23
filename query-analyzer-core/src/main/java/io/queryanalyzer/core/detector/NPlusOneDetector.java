@@ -35,7 +35,9 @@ public class NPlusOneDetector implements QueryDetector {
         Pattern.compile("\\w+_TIME\\s*[><=]"),
         Pattern.compile("\\w+_DATE\\s*[><=]")
     };
-    
+
+    private static final Pattern OFFSET_PATTERN = Pattern.compile("OFFSET\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
+
     private final DetectorConfig config;
     private final ConfidenceAnalyzer confidenceAnalyzer;
     private final TimingAnalyzer timingAnalyzer;
@@ -434,10 +436,9 @@ public class NPlusOneDetector implements QueryDetector {
 
         try {
             List<Integer> offsets = new ArrayList<>();
-            Pattern offsetPattern = Pattern.compile("OFFSET\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
 
             for (QueryInfo query : queries) {
-                java.util.regex.Matcher matcher = offsetPattern.matcher(query.getSql());
+                java.util.regex.Matcher matcher = OFFSET_PATTERN.matcher(query.getSql());
                 if (matcher.find()) {
                     try {
                         offsets.add(Integer.parseInt(matcher.group(1)));

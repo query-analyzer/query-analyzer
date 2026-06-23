@@ -20,6 +20,12 @@ public final class SqlNormalizer {
     private static final Pattern BLOCK_COMMENT_PATTERN = Pattern.compile("/\\*.*?\\*/", Pattern.DOTALL);
     private static final Pattern LINE_COMMENT_PATTERN = Pattern.compile("--[^\r\n]*");
 
+    // Compiled once: normalize() runs per captured statement, so recompiling these
+    // on every call was pure overhead on the capture hot path.
+    private static final Pattern INTEGER_PATTERN = Pattern.compile("\\b\\d+\\b");
+    private static final Pattern LIMIT_PATTERN = Pattern.compile("\\bLIMIT\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern OFFSET_PATTERN = Pattern.compile("\\bOFFSET\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
+
     private SqlNormalizer() {
     }
     
@@ -63,7 +69,7 @@ public final class SqlNormalizer {
         StringBuilder result = new StringBuilder();
         int lastEnd = 0;
         
-        Matcher matcher = Pattern.compile("\\b\\d+\\b").matcher(sql);
+        Matcher matcher = INTEGER_PATTERN.matcher(sql);
         
         while (matcher.find()) {
             int start = matcher.start();
@@ -121,9 +127,7 @@ public final class SqlNormalizer {
     public static Integer extractLimit(String sql) {
         if (sql == null) return null;
         
-        Pattern limitPattern = Pattern.compile(
-            "\\bLIMIT\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = limitPattern.matcher(sql);
+        Matcher matcher = LIMIT_PATTERN.matcher(sql);
         
         if (matcher.find()) {
             try {
@@ -139,9 +143,7 @@ public final class SqlNormalizer {
     public static Integer extractOffset(String sql) {
         if (sql == null) return null;
         
-        Pattern offsetPattern = Pattern.compile(
-            "\\bOFFSET\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = offsetPattern.matcher(sql);
+        Matcher matcher = OFFSET_PATTERN.matcher(sql);
         
         if (matcher.find()) {
             try {

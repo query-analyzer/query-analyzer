@@ -83,6 +83,39 @@
             <version>1.10</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Real PostgreSQL for the overhead/EXPLAIN run (RQ4). zonky boots an actual
+             Postgres binary as the current user - no Docker, no root - so overhead can be
+             reported as a fraction of a genuine DB request and the tool's EXPLAIN-based
+             plan analysis can be exercised against a real engine. Test scope only. -->
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-database-spring-test</artifactId>
+            <version>2.5.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <version>2.0.7</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Live competitor #2: JPlusOne (adgadev) - a REAL automatic N+1 detector (not a
+             counter). v2.0.0 is the only other test-time tool ported to Spring Boot 3 /
+             Hibernate 6 / Jakarta, so it can run on the same stack. It records a session
+             tree; IMPLICIT operations are lazy initialisations (its N+1 signal). -->
+        <dependency>
+            <groupId>com.adgadev.jplusone</groupId>
+            <artifactId>jplusone-core</artifactId>
+            <version>2.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
