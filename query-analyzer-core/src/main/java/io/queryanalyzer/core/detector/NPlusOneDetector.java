@@ -431,18 +431,11 @@ public class NPlusOneDetector implements QueryDetector {
         if (queries.size() < 2) {
             return false;
         }
-        
+
         try {
-            boolean allHaveLimit = queries.stream()
-                .allMatch(q -> q.getSql().toUpperCase().contains("LIMIT"));
-            
-            if (!allHaveLimit) {
-                return false;
-            }
-            
             List<Integer> offsets = new ArrayList<>();
             Pattern offsetPattern = Pattern.compile("OFFSET\\s+(\\d+)", Pattern.CASE_INSENSITIVE);
-            
+
             for (QueryInfo query : queries) {
                 java.util.regex.Matcher matcher = offsetPattern.matcher(query.getSql());
                 if (matcher.find()) {
@@ -453,33 +446,40 @@ public class NPlusOneDetector implements QueryDetector {
                     }
                 }
             }
-            
-            if (offsets.size() < 2) {
-                return false;
-            }
-            
-            // Sort offsets and check if they're sequential (increasing by same amount)
-            offsets.sort(Integer::compareTo);
-            
-            // Check if offsets increase by consistent step (common pagination pattern)
-            int firstDiff = offsets.get(1) - offsets.get(0);
-            if (firstDiff <= 0) {
-                return false; // Not increasing
-            }
-            
-            // Verify at least 50% of differences match the first difference
-            // (allows for some variation in real pagination)
-            int matchingDiffs = 0;
-            for (int i = 1; i < offsets.size(); i++) {
-                int diff = offsets.get(i) - offsets.get(i - 1);
-                if (diff == firstDiff) {
-                    matchingDiffs++;
+
+            if (offsets.size() >= 2) {
+                // Literal offsets present (inlined dialects). Sort and check whether they
+                // increase by a consistent step - the signature of a pagination scan.
+                offsets.sort(Integer::compareTo);
+
+                int firstDiff = offsets.get(1) - offsets.get(0);
+                if (firstDiff <= 0) {
+                    return false; // Not increasing
                 }
+
+                // Verify at least 50% of differences match the first difference
+                // (allows for some variation in real pagination)
+                int matchingDiffs = 0;
+                for (int i = 1; i < offsets.size(); i++) {
+                    int diff = offsets.get(i) - offsets.get(i - 1);
+                    if (diff == firstDiff) {
+                        matchingDiffs++;
+                    }
+                }
+
+                double matchRatio = (double) matchingDiffs / (offsets.size() - 1);
+                return matchRatio >= 0.5;
             }
-            
-            double matchRatio = (double) matchingDiffs / (offsets.size() - 1);
-            return matchRatio >= 0.5;
-            
+
+            // No literal offsets to compare. In real applications pagination
+            // offsets/limits are PreparedStatement bind parameters, so the SQL reads
+            // "offset ? rows fetch first ? rows only" with nothing to parse. Treat
+            // repeated same-shape reads as pagination ONLY when every query carries an
+            // OFFSET clause: a bare "LIMIT n" with no OFFSET is NOT pagination - it can
+            // be a genuine N+1 of row-limited child fetches - so it must stay reportable.
+            return queries.stream()
+                .allMatch(q -> q.getSql().toUpperCase().contains("OFFSET"));
+
         } catch (Exception e) {
             return false;
         }
