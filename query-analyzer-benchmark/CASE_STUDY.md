@@ -28,8 +28,8 @@ QueryAnalyzerAutoConfiguration : Wrapping DataSource bean 'dataSource' with Quer
 QueryAnalyzerAutoConfiguration : N+1 query detector enabled (confidence threshold: 0.5)
 ```
 
-Then three pages were requested: `GET /vets.html`, `GET /owners?lastName=`,
-`GET /owners/1`.
+The following pages were then requested: `GET /vets.html`, `GET /owners?lastName=`,
+`GET /owners/1`, and `GET /owners/find` (the search form).
 
 ## Findings
 
@@ -44,7 +44,8 @@ caught all three:
 | 2 | `GET /owners` | `pets` | 5 | HIGH (100%) | `OwnerController.findPaginatedForOwnersLastName:130` |
 | 3 | `GET /owners` | `visits` | 6 | HIGH (100%) | `OwnerController.findPaginatedForOwnersLastName:130` |
 
-Example of the tool's console report (verbatim):
+Example of the tool's console report (the long SQL line is wrapped here for page
+width; otherwise reproduced as emitted):
 
 ```
   INFO | N+1 Query Detected
