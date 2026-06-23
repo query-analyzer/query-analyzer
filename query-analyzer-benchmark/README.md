@@ -13,6 +13,10 @@ It measures two things:
    workloads (`AccuracyBenchmarkTest`).
 2. **Overhead** - per-request cost of capture + analysis (`OverheadBenchmarkTest`).
 
+See also **[CASE_STUDY.md](CASE_STUDY.md)**: integrating Query Analyzer into the real
+`spring-petclinic` app (one dependency, zero code changes) found **three genuine N+1
+problems at HIGH confidence**, each pinpointed to an exact source location.
+
 ## Why this design is fair
 
 The hard part of comparing N+1 tools is that each hooks the database at a
