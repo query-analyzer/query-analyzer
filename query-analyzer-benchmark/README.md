@@ -89,6 +89,34 @@ Accuracy across the 7 scenarios:
 The naive counter false-positives on `pagination_loop`, `streaming_poll`, and
 `repeated_below_threshold`. query-analyzer suppresses all three.
 
+### Live competitor: Hypersistence Utils (real binary, same stack)
+
+`HypersistenceComparisonTest` runs the actual
+`io.hypersistence:hypersistence-utils-hibernate-63:3.15.2` binary
+(`SQLStatementCountValidator`) on the identical Spring Boot 3.2 / Hibernate 6.3
+stack. (QuickPerf is not run live: its last release, 1.1.0/2021, supports only
+Spring Boot 1/2 - see the count-based baseline above for its documented rule.)
+
+| Scenario | Ground truth | Hypersistence SELECT count | query-analyzer (automatic) |
+|---|---|---|---|
+| classic_n_plus_one | N+1 | 6 | FLAG OK |
+| n_plus_one_via_query_method | N+1 | 6 | FLAG OK |
+| join_fetch | clean | 1 | pass OK |
+| pagination_loop | clean | 5 | pass OK |
+| streaming_poll | clean | 5 | pass OK |
+| batched_in_clause | clean | 1 | pass OK |
+| repeated_below_threshold | clean | 2 | pass OK |
+
+The honest framing: Hypersistence is a **manual statement counter** - a developer
+who hardcodes the right `assertSelectCount(n)` per test will not get false
+positives. The differentiation is that (1) it needs a human-specified expected
+count for *every* test, (2) a raw count cannot separate an N+1 (6 SELECTs) from
+legitimate pagination (5 SELECTs) on its own, and (3) it runs only in tests.
+query-analyzer classifies every scenario **automatically**, with zero per-test
+configuration, and also runs in production. The test additionally asserts the real
+binary behaves as documented (a correct `assertSelectCount(1)` passes; an N+1 makes
+it throw).
+
 Overhead (coarse wall-clock; use deltas, not absolutes):
 
 | Component | Cost |
