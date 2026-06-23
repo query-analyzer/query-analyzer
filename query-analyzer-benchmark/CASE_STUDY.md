@@ -70,12 +70,29 @@ Each report names the **endpoint**, the **exact source location** (e.g.
 `OwnerController:130`), the offending **table/collection**, a **sample query**, and a
 **confidence-scored explanation** - actionable enough to fix directly.
 
+## Fix effectiveness (are the suggestions actionable?)
+
+To check that the tool's advice actually works, we applied its own suggested fix -
+`@BatchSize` - to the three eager collections (`Owner.pets`, `Pet.visits`,
+`Vet.specialties`), rebuilt, and re-ran the exact same requests.
+
+| State | N+1 problems reported by the tool |
+|---|---|
+| Before (stock petclinic) | 3 (vet_specialties, pets, visits) |
+| After applying suggested `@BatchSize` | **0** |
+
+The single annotation collapses each per-parent collection load into a batched
+fetch, and re-running the tool confirms all three N+1 reports disappear. The
+suggestions are therefore not just diagnostic but **directly actionable**: the tool
+detects the problem, names a fix, and the named fix resolves what it detected.
+
 ## Why this matters for the paper
 
 - Detection works on **unmodified third-party code**, not just crafted examples.
 - One dependency, zero code changes - the integration story holds on a real app.
 - The findings are **true positives on a well-known, well-reviewed reference app**,
   reinforcing that N+1 ships even in exemplary codebases.
+- The tool's suggestions are **verified to fix** the problems it reports (3 -> 0).
 
 ## Reproduce
 
