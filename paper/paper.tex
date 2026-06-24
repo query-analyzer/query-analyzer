@@ -550,11 +550,12 @@ N+1 --- five repeated tag loads on \code{GET /api/tutorials} at 100\% confidence
 --- a different manifestation from PetClinic's controller-loop N+1.
 
 \noindent\textbf{RQ4 (overhead).} Measured live against a real PostgreSQL
-instance, \tool{} adds a fixed $\approx\!1.0$\,ms per request for a six-query
-trace ($\approx\!0.6$\,ms statement capture, dominated by stack-trace
-materialization, plus $\approx\!0.4$\,ms post-request analysis). Because this cost
-is per-request, not proportional to query latency, it stays below 5\% for any
-request taking $\gtrsim\!20$\,ms and below 2\% at 50\,ms --- negligible for
+instance on a laptop (Intel Core i7-9750H, 6~cores, 16\,GB RAM), \tool{} adds a
+fixed per-request overhead on the order of $1$\,ms for a six-query trace
+($\approx\!0.7$\,ms in our runs: statement capture plus post-request analysis,
+with the exact figure and the split between the two varying with hardware). Because this
+cost is per-request, not proportional to query latency, it stays below 5\% for
+any request taking $\gtrsim\!20$\,ms and below 2\% at 50\,ms --- negligible for
 realistic DB-backed endpoints, and dominating only on sub-millisecond in-memory
 queries. On the same instance the tool's \texttt{EXPLAIN} analyzer correctly
 classified the N+1 child query as a sequential scan (\code{cost=0.00..11.62}) and
@@ -601,6 +602,7 @@ Spring PetClinic case study are at
 \url{https://github.com/query-analyzer/query-analyzer}. Step-by-step
 reproduction instructions for every experiment accompany the artifact.
 
+\clearpage
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
 
