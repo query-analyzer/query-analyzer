@@ -83,13 +83,15 @@ N+1 Detection for the JVM}
 \begin{abstract}
 The \emph{N+1 query problem} (issuing one database query per element of a
 collection instead of a single batched query) is among the most common and
-costly performance defects in data-access code, yet tool support on the JVM is
-fragmented. Raw JDBC interceptors log statements but do not detect anti-patterns;
+costly performance defects in data-access code, yet tool support on the Java
+Virtual Machine (JVM) is fragmented. Raw Java Database Connectivity (JDBC)
+interceptors log statements but do not detect anti-patterns;
 test-time assertion libraries detect N+1 only inside unit tests, are typically
 tied to Hibernate, and flag \emph{any} repeated query, producing false positives
 on legitimate patterns such as pagination and polling. We present \tool, an
-open-source tool that closes these gaps. It intercepts queries at the JDBC layer,
-so it is framework-agnostic (Hibernate, Spring Data JPA, MyBatis, jOOQ, plain
+open-source tool that automatically detects N+1 queries, analyzes their query
+plans, and suggests fixes. It intercepts queries at the JDBC layer,
+so it works across frameworks (Hibernate, Spring Data JPA, MyBatis, jOOQ, plain
 JDBC); it runs both as a \code{@NoNPlusOne} JUnit~5 regression guard and as a
 production servlet filter with per-endpoint reporting; and it uses a
 confidence model with explicit false-positive suppression to separate true N+1s
@@ -109,7 +111,7 @@ reproduction package.
 %% ===========================================================================
 \section{Introduction}
 %% ===========================================================================
-Modern JVM applications rarely write SQL by hand. Object-relational mapping
+Modern Java Virtual Machine (JVM) applications rarely write SQL by hand. Object-relational mapping
 (ORM) and data-access frameworks such as Hibernate, Spring Data JPA, MyBatis,
 and jOOQ generate queries from high-level code. This convenience hides a recurring
 performance defect: the \emph{N+1 query problem}, where iterating over $N$
@@ -123,8 +125,9 @@ Despite the problem's prevalence, JVM tooling is fragmented into three groups,
 none of which is sufficient on its own:
 \begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=1pt]
 \item \textbf{Raw interceptors} (P6Spy~\cite{p6spy},
-datasource-proxy~\cite{datasourceproxy}) transparently log or count JDBC
-statements, but leave \emph{detection} of anti-patterns entirely to the
+datasource-proxy~\cite{datasourceproxy}) transparently log or count Java
+Database Connectivity (JDBC) statements, but leave \emph{detection} of
+anti-patterns entirely to the
 developer.
 \item \textbf{Test-time assertion libraries} (QuickPerf~\cite{quickperf},
 JPlusOne~\cite{jplusone}, Hypersistence Utils'
@@ -144,11 +147,12 @@ contributions are:
 and therefore works across Hibernate, Spring Data JPA, MyBatis, jOOQ, and plain
 JDBC, in \textbf{both} test and production settings.
 \item A \textbf{confidence-based detection model} with explicit
-false-positive suppression (pagination, streaming/polling, batched \code{IN},
+false-positive suppression (pagination, polling, batched \code{IN},
 sub-threshold repetition) that distinguishes true N+1s from legitimate
 repetition, the failure mode of count-based detectors.
-\item A \code{@NoNPlusOne} JUnit~5 extension that turns detection into a CI
-\textbf{regression guard}, plus \texttt{EXPLAIN}-based query-plan analysis and
+\item A \code{@NoNPlusOne} JUnit~5 extension that turns detection into a
+continuous integration (CI) \textbf{regression guard}, plus
+\texttt{EXPLAIN}-based query-plan analysis and
 framework-specific fix suggestions.
 \item An \textbf{open, reproducible} evaluation: a labelled benchmark, a
 controlled study isolating the model's contribution, and a real-world case study
@@ -177,11 +181,10 @@ for (User u : users)
 The naive way to detect this is to flag any SQL ``shape'' that executes more than
 once. This is exactly what count-based test tools do, and it is the source of
 their false positives: many \emph{legitimate} workloads also repeat a query
-shape: paginated scans (\code{... OFFSET ? ROWS FETCH ...}), steady-cadence
-polling of a time series, batched \code{IN (...)} fetches, or the same lookup
-issued from several services in one request. A tool that cries wolf on these
-trains developers to ignore it. \tool{} is built around separating these cases
-from genuine N+1s without requiring a hand-specified expected count per test.
+shape --- paginated scans, steady-cadence polling, batched \code{IN (...)}
+fetches, or the same lookup issued from several services in one request. A tool
+that cries wolf on these trains developers to ignore it. \tool{} separates these
+cases from genuine N+1s without a hand-specified expected count per test.
 
 %% ===========================================================================
 \section{Tool Overview}
@@ -258,12 +261,18 @@ by normalized shape; only groups exceeding a minimum repetition count are
 considered.
 
 \noindent\textbf{False-positive suppression.} Before scoring, \tool{} discards
-groups that match known-legitimate patterns: (i) \emph{pagination}, repeated
-reads of one shape that all carry an \code{OFFSET} clause, including the common
-case where the offset is a bind parameter (\code{OFFSET ? ROWS FETCH ...}) and no
-literal is visible; (ii) \emph{streaming/polling}, a timestamp predicate read at
-a steady cadence; (iii) \emph{batched} \code{IN (...)} fetches; and (iv)
-sub-threshold repetition. Crucially, a bare repeated \code{LIMIT n} with no offset
+groups that match known-legitimate patterns. Each of these repeats a query shape
+for a benign reason that a count-based rule would misread as an N+1, so
+suppressing them is what keeps the tool from crying wolf: (i) \emph{pagination},
+repeated reads of one shape that all carry an \code{OFFSET} clause, including the
+common case where the offset is a bind parameter (\code{OFFSET ? ROWS FETCH ...})
+and no literal is visible --- these walk successive pages of one result set
+rather than issuing one query per parent row; (ii) \emph{streaming/polling}, a
+timestamp predicate read at a steady cadence --- a query deliberately re-run on a
+timer, not fired inside a loop over a collection; (iii) \emph{batched}
+\code{IN (...)} fetches --- already the single batched query that \emph{fixes} an
+N+1, not the defect; and (iv) sub-threshold repetition --- too few repeats to
+indicate a loop. Crucially, a bare repeated \code{LIMIT n} with no offset
 is \emph{not} treated as pagination, since it can be a genuine row-limited N+1.
 
 \begin{figure}[t]
@@ -370,12 +379,14 @@ their verdicts read from their own output. JPlusOne is the only other test-time
 N+1 detector ported to the Jakarta/Hibernate~6 stack: spring-hibernate-query-utils
 and QuickPerf both remain on Spring~Boot~2 / Hibernate~5 (\code{javax}) and do not
 load on a modern application --- itself a symptom of the fragmentation \tool{}
-addresses.
+addresses. These baselines target somewhat different tasks: query-budget
+libraries such as Hypersistence Utils enforce a \emph{developer-specified}
+statement count rather than inferring N+1s. We therefore report what each
+concludes without a hand-specified count --- measuring which tools separate N+1s
+from legitimate repetition unaided, not a like-for-like contest.
 
 \noindent\textbf{Feature comparison.} Table~\ref{tab:features} situates \tool{}
-against representative tools. It is the only free tool that is simultaneously
-framework-agnostic, usable in test \emph{and} production, false-positive-aware,
-and plan-aware.
+against representative tools.
 
 \begin{table}[t]
 \centering
@@ -407,9 +418,8 @@ Open source                    & \cmark & \cmark & \cmark & \cmark & \cmark \\
 \end{table}
 
 \noindent\textbf{RQ1 (accuracy).} Table~\ref{tab:accuracy} reports precision,
-recall, and F1 on the seven-scenario suite (2 true N+1, 5 clean; this small,
-hand-built suite validates the mechanism rather than estimating field accuracy,
-see Limitations). \tool{} flags both N+1s and none of the five clean cases
+recall, and F1 on the seven-scenario suite (2 true N+1, 5 clean; see
+Limitations). \tool{} flags both N+1s and none of the five clean cases
 (2~TP, 0~FP, 5~TN, 0~FN); the count-based baseline catches both N+1s but also
 fires on three of the five clean scenarios---pagination, polling, and
 sub-threshold repetition---for 0.40 precision. JPlusOne, run live, is precise
@@ -428,17 +438,19 @@ JDBC-layer design generalises beyond ORM stacks.
 \begin{table}[t]
 \centering
 \caption{Detection accuracy on the labelled suite (7 scenarios; 2 true N+1, 5
-clean). JPlusOne and the count-based baseline are run live on the same stack;
-per-scenario verdicts and raw confusion counts are in the artifact.}
+clean). JPlusOne and the count-based (QuickPerf-style) baseline are run live on
+the same stack; per-scenario verdicts and raw confusion counts are in the
+artifact.}
 \label{tab:accuracy}
 \small
+\setlength{\tabcolsep}{5pt}
 \begin{tabular}{lccc}
 \toprule
 Detector & Precision & Recall & F1 \\
 \midrule
-\tool{} (Threshold/Confidence/Hybrid) & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} \\
-JPlusOne 2.0.0 (live)                  & 1.00 & 0.50 & 0.67 \\
-Count-based baseline (QuickPerf-style) & 0.40 & 1.00 & 0.57 \\
+\tool{} (all three modes)     & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} \\
+JPlusOne 2.0.0 (live)         & 1.00 & 0.50 & 0.67 \\
+Count-based baseline          & 0.40 & 1.00 & 0.57 \\
 \bottomrule
 \end{tabular}
 \vspace{-4pt}
@@ -452,7 +464,7 @@ Here a pure threshold false-positives (precision 0.60) while
 \textsc{Confidence}/\textsc{Hybrid} reach 1.00. An ablation
 (Table~\ref{tab:ablation}) shows each signal earns its place: removing the
 framework signal costs precision; removing timing or location costs recall.
-Sweeping the decision threshold $\theta$ (Fig.~\ref{fig:sensitivity}), F1 peaks across $0.4$--$0.5$, justifying the choice of $\theta=0.5$. The weights are not a knife-edge: sweeping every $(w_f,w_t,w_l)$ on a $0.1$ grid (each in $[0.1,0.8]$, summing to~1) keeps F1 in $[0.75,1.00]$, its worst case never falling below the threshold baseline, and a broad region including the default $(0.5,0.2,0.3)$ reaches the optimal F1${=}1.00$ (10 of 36 grid points). The ordering reflects signal reliability: the framework signal most directly evidences ORM lazy loading and is weighted highest, timing (the noisiest) lowest.
+Sweeping the decision threshold $\theta$ (Fig.~\ref{fig:sensitivity}), F1 peaks across $0.4$--$0.5$, justifying the choice of $\theta=0.5$. A grid sweep of the weights keeps F1 in $[0.75,1.00]$, with the default $(0.5,0.2,0.3)$ among the settings reaching the optimal F1${=}1.00$ (full grids in the artifact).
 
 \begin{figure}[t]
 \centering
@@ -544,7 +556,7 @@ the single-shot pagination and reference-data queries issued by the same
 requests. Applying the tool's own suggested fix
 (\code{@BatchSize}) and re-running eliminated all three (3~$\to$~0), confirming the
 suggestions are not merely diagnostic but actionable. As further corroboration on
-unrelated code, applying \tool{} (one dependency, no code changes) to a
+unrelated code, applying \tool{} to a
 third-party Spring~Boot~3 many-to-many sample flagged a \emph{serialization-time}
 N+1 --- five repeated tag loads on \code{GET /api/tutorials} at 100\% confidence
 --- a different manifestation from PetClinic's controller-loop N+1.
@@ -552,12 +564,11 @@ N+1 --- five repeated tag loads on \code{GET /api/tutorials} at 100\% confidence
 \noindent\textbf{RQ4 (overhead).} Measured live against a real PostgreSQL
 instance on a laptop (Intel Core i7-9750H, 6~cores, 16\,GB RAM), \tool{} adds a
 fixed per-request overhead on the order of $1$\,ms for a six-query trace
-($\approx\!0.7$\,ms in our runs: statement capture plus post-request analysis,
-with the exact figure and the split between the two varying with hardware). Because this
+($\approx\!0.7$\,ms in our runs: statement capture plus post-request analysis).
+Because this
 cost is per-request, not proportional to query latency, it stays below 5\% for
 any request taking $\gtrsim\!20$\,ms and below 2\% at 50\,ms --- negligible for
-realistic DB-backed endpoints, and dominating only on sub-millisecond in-memory
-queries. On the same instance the tool's \texttt{EXPLAIN} analyzer correctly
+realistic DB-backed endpoints. On the same instance the tool's \texttt{EXPLAIN} analyzer correctly
 classified the N+1 child query as a sequential scan (\code{cost=0.00..11.62}) and
 recommended an index.
 
@@ -572,8 +583,7 @@ unmodified-PetClinic study and the plain-JDBC case, not the synthetic suite. The
 real-world study covers one application on one ORM, though the plain-JDBC result
 shows the JDBC-level design is not ORM-bound. Production overhead is
 characterised (RQ4) but not measured under sustained load; the reported cost is a
-fixed per-request figure, not a percentage guarantee. All artifacts are public
-for scrutiny and replication.
+fixed per-request figure, not a percentage guarantee.
 
 %% ===========================================================================
 \section{Related Work}
@@ -596,13 +606,19 @@ Table~\ref{tab:accuracy} quantifies the resulting precision gap.
 %% ===========================================================================
 \tool{} brings framework-agnostic, confidence-based N+1 and slow-query detection
 to the JVM, usable both as a CI regression guard and in production, with
-actionable fixes. It is released under MIT on Maven Central
-(\code{io.github.query-analyzer}, v1.2.5); source, the benchmark module, and the
-Spring PetClinic case study are at
-\url{https://github.com/query-analyzer/query-analyzer}. Step-by-step
-reproduction instructions for every experiment accompany the artifact.
+actionable fixes.
 
-\clearpage
+%% ===========================================================================
+\section{Tool Availability}
+%% ===========================================================================
+\tool{} is open-source (MIT). Source code, the benchmark module, the
+PetClinic case study, and
+reproduction instructions are at
+\url{https://github.com/query-analyzer/query-analyzer}; released binaries are on
+Maven Central (\code{io.github.query-analyzer}, v1.2.5).
+A demonstration video is at \url{VIDEO-URL} and an archived artifact snapshot at
+\url{ARCHIVE-DOI}.
+
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
 
