@@ -25,13 +25,13 @@ A production-grade query performance analyzer for Java applications that automat
 <dependency>
     <groupId>io.github.query-analyzer</groupId>
     <artifactId>query-analyzer-spring-boot-starter</artifactId>
-    <version>1.2.5</version>
+    <version>1.2.6</version>
 </dependency>
 ```
 
 **Gradle:**
 ```gradle
-implementation 'io.github.query-analyzer:query-analyzer-spring-boot-starter:1.2.5'
+implementation 'io.github.query-analyzer:query-analyzer-spring-boot-starter:1.2.6'
 ```
 
 ### 2. Run Your Application
