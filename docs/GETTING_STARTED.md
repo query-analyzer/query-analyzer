@@ -23,7 +23,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.github.query-analyzer</groupId>
     <artifactId>query-analyzer-spring-boot-starter</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.7</version>
 </dependency>
 ```
 
@@ -33,7 +33,7 @@ Add to your `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'io.github.query-analyzer:query-analyzer-spring-boot-starter:1.2.6'
+    implementation 'io.github.query-analyzer:query-analyzer-spring-boot-starter:1.2.7'
 }
 ```
 
