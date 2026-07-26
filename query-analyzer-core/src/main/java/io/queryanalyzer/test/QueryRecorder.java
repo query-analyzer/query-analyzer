@@ -70,18 +70,28 @@ public final class QueryRecorder {
     public static List<QueryIssue> stopAndAnalyze(int threshold, Set<String> ignoreTables) {
         List<QueryInfo> queries = QUERIES.get();
         QUERIES.remove();
-        
+        return analyze(queries, threshold, ignoreTables);
+    }
+
+
+    /**
+     * Analyze an already-captured list of queries (e.g. collected by the JDBC
+     * proxy via {@code QueryTracker}) for N+1 patterns. Used by
+     * {@link NoNPlusOneExtension} so the test-time guard shares the same capture
+     * path as production.
+     */
+    public static List<QueryIssue> analyze(List<QueryInfo> queries, int threshold, Set<String> ignoreTables) {
         if (queries == null || queries.isEmpty()) {
             return List.of();
         }
-        
+
         List<QueryInfo> filtered = filterIgnoredTables(queries, ignoreTables);
-        
+
         DetectorConfig config = DetectorConfig.builder()
             .detectionMode(DetectorConfig.DetectionMode.THRESHOLD)
             .minRepetitions(threshold)
             .build();
-        
+
         NPlusOneDetector detector = new NPlusOneDetector(config);
         return detector.detect(filtered);
     }

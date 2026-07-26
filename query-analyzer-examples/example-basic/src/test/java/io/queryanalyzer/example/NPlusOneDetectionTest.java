@@ -53,18 +53,18 @@ class NPlusOneDetectionTest {
         }
 
         @Test
-        @NoNPlusOne(threshold = 10)
+        @NoNPlusOne(threshold = 15)
         @Transactional(readOnly = true)
         @DisplayName("High threshold allows some repetition - should pass")
         void testWithHighThreshold_ShouldPass() {
-            // Even with N+1, threshold of 10 allows it (we only have 5 users)
+            // Even with N+1, a threshold above the row count allows it (data.sql seeds 10 users)
             List<User> users = userRepository.findAll();
-            
+
             for (User user : users) {
-                // This triggers N+1, but we have < 10 users
+                // This triggers N+1, but the 10 repeats stay under the threshold of 15
                 user.getOrders().size();
             }
-            
+
             assertFalse(users.isEmpty());
         }
 
