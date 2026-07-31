@@ -297,8 +297,12 @@ public class NPlusOneDetector implements QueryDetector {
         
         if (config.isEnableFrameworkSuggestions()) {
             try {
-                StackTraceElement[] stackTrace = queries.get(0).getStackTrace();
-                FrameworkSuggestionProvider.Framework framework = 
+                // Framework markers (org.hibernate.*, etc.) live in the FULL stack;
+                // the filtered stack keeps only application frames, so detection there
+                // always returns UNKNOWN and no fix is emitted. Use the full trace,
+                // same as the confidence analyzer.
+                StackTraceElement[] stackTrace = fullStackTrace(queries.get(0));
+                FrameworkSuggestionProvider.Framework framework =
                     suggestionProvider.detectFramework(stackTrace);
                 
                 if (framework != FrameworkSuggestionProvider.Framework.UNKNOWN) {
@@ -315,6 +319,22 @@ public class NPlusOneDetector implements QueryDetector {
         }
         
         return enhanced;
+    }
+
+
+    /**
+     * Returns the full (unfiltered) stack trace stored in query metadata, falling
+     * back to the filtered stack trace. Framework detection needs the unfiltered
+     * trace because {@code StackTraceFilter} strips ORM/driver packages.
+     */
+    private StackTraceElement[] fullStackTrace(QueryInfo query) {
+        if (query.getMetadata() != null) {
+            Object full = query.getMetadata().get("fullStackTrace");
+            if (full instanceof StackTraceElement[] fullTrace && fullTrace.length > 0) {
+                return fullTrace;
+            }
+        }
+        return query.getStackTrace();
     }
 
 

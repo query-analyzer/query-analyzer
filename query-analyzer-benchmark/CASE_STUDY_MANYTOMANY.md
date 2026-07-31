@@ -24,7 +24,7 @@ Add the starter:
 <dependency>
   <groupId>io.github.query-analyzer</groupId>
   <artifactId>query-analyzer-spring-boot-starter</artifactId>
-  <version>1.2.5</version>
+  <version>1.2.7</version>
 </dependency>
 ```
 
@@ -63,7 +63,7 @@ identical `select ... from tutorial_tags ... where tutorial_id=?` statements.
 ## Reproduce
 
 ```bash
-# Build & install the tool locally (publishes to ~/.m2), or use Maven Central 1.2.5
+# Build & install the tool locally (publishes to ~/.m2), or use Maven Central 1.2.7
 cd query-analyzer && mvn clean install -DskipTests
 
 git clone https://github.com/bezkoder/spring-boot-many-to-many.git
