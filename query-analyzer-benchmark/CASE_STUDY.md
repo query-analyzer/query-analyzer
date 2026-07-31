@@ -17,7 +17,7 @@ single dependency and zero code changes to the application.**
 <dependency>
   <groupId>io.github.query-analyzer</groupId>
   <artifactId>query-analyzer-spring-boot-starter</artifactId>
-  <version>1.2.7</version>
+  <version>1.2.8</version>
 </dependency>
 ```
 
