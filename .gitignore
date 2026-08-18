@@ -75,3 +75,13 @@ surefire-reports/
 # JRebel
 rebel.xml
 rebel-remote.xml
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+paper/paper.pdf

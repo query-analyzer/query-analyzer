@@ -1,14 +1,18 @@
 %% ---------------------------------------------------------------------------
-%% Single-blind Tool Demonstration submission draft (authors shown).
-%% 'nonacm' gives the ACM sigconf layout without the copyright/rights block,
-%% so the draft compiles cleanly with no placeholder metadata. For camera-ready:
-%% remove 'nonacm', then add \acmConference / \setcopyright / \acmDOI as provided
-%% by the proceedings chairs.
+%% Query Analyzer -- SPLASH Companion '26, Tool Demonstrations.
+%% Rights metadata below is as supplied by ACM's Publication Release
+%% Confirmation and should not be edited by hand.
 %% ---------------------------------------------------------------------------
-\documentclass[sigconf,nonacm]{acmart}
+\documentclass[sigplan,screen]{acmart}
 
-\settopmatter{printacmref=false, printfolios=true}
-\pagestyle{plain}
+\copyrightyear{2026}
+\acmYear{2026}
+\setcopyright{cc}
+\setcctype{by}
+\acmConference[SPLASH Companion '26]{Companion Proceedings of the 2026 ACM SIGPLAN International Conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 03--09, 2026}{Oakland, CA, USA}
+\acmBooktitle{Companion Proceedings of the 2026 ACM SIGPLAN International Conference on Systems, Programming, Languages, and Applications: Software for Humanity (SPLASH Companion '26), October 03--09, 2026, Oakland, CA, USA}
+\acmDOI{10.1145/3837729.3840484}
+\acmISBN{979-8-4007-2910-2/2026/10}
 
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc, shapes.geometric}
@@ -18,6 +22,8 @@
 \usepackage{colortbl}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
+% Extra tolerance so the long URLs do not overflow the column.
+\emergencystretch=1.5em
 
 \newcommand{\cmark}{\textcolor{green!60!black}{\ding{51}}}
 \newcommand{\xmark}{\textcolor{black!30}{\ding{55}}}
@@ -72,11 +78,12 @@ regression testing, JDBC, Spring, Hibernate}
 N+1 Detection for the JVM}
 
 \author{Mahmoud Khawaja}
-\email{mahmoud.khawaja97@gmail.com}
+\orcid{0009-0000-5098-9775}
+\email{mahmoud.mahmoud03@eng-st.cu.edu.eg}
 \affiliation{%
   \department{Systems and Biomedical Engineering Department, Faculty of Engineering}
   \institution{Cairo University}
-  \city{Giza}
+  \city{Cairo}
   \country{Egypt}
 }
 
@@ -130,8 +137,8 @@ Database Connectivity (JDBC) statements, but leave \emph{detection} of
 anti-patterns entirely to the
 developer.
 \item \textbf{Test-time assertion libraries} (QuickPerf~\cite{quickperf},
-JPlusOne~\cite{jplusone}, Hypersistence Utils'
-\code{SQLStatementCountValidator}~\cite{hypersistenceutils},
+JPlusOne~\cite{jplusone}, the Hypersistence Utils statement-count
+validator~\cite{hypersistenceutils},
 spring-hibernate-query-utils~\cite{springhibernatequeryutils}) detect N+1, but
 only inside unit tests, are mostly Hibernate/JPA-specific, and either require a
 hand-written expected query count per test or flag \emph{any} repeated query
@@ -149,7 +156,7 @@ JDBC, in \textbf{both} test and production settings.
 \item A \textbf{confidence-based detection model} with explicit
 false-positive suppression (pagination, polling, batched \code{IN},
 sub-threshold repetition) that distinguishes true N+1s from legitimate
-repetition, the failure mode of count-based detectors.
+repetition, where count-based detectors fail.
 \item A \code{@NoNPlusOne} JUnit~5 extension that turns detection into a
 continuous integration (CI) \textbf{regression guard}, plus
 \texttt{EXPLAIN}-based query-plan analysis and
@@ -174,6 +181,10 @@ for (User u : users)
 \end{lstlisting}
 \vspace{-4pt}
 \caption{A classic N+1: the loop body silently issues one query per user.}
+\Description{Three lines of Java. The first calls userRepository.findAll(),
+annotated as one query. A for loop over the returned users then calls
+u.getOrders().size() in its body, annotated as issuing N additional lazy
+queries, giving N+1 queries in total.}
 \label{fig:motiv}
 \vspace{-6pt}
 \end{figure}
@@ -284,7 +295,7 @@ is \emph{not} treated as pagination, since it can be a genuine row-limited N+1.
   sum/.style={draw, circle, inner sep=0.5pt, minimum size=6mm, fill=gray!10},
   dec/.style={draw, diamond, aspect=1.5, inner sep=0pt, align=center,
               minimum width=11mm, fill=gray!5},
-  out/.style={draw, rounded corners, align=center, inner sep=2.5pt,
+  verdict/.style={draw, rounded corners, align=center, inner sep=2.5pt,
               minimum height=4.5mm, minimum width=11mm}
 ]
 \node[sig] (sf) {Framework $S_f$\\[-1pt]\tiny ORM/lazy-load frames};
@@ -292,10 +303,10 @@ is \emph{not} treated as pagination, since it can be a genuine row-limited N+1.
 \node[sig, below=2.0mm of st] (sl) {Location $S_l$\\[-1pt]\tiny call-site proximity};
 \node[sum, right=9mm of st] (sum) {$\Sigma$};
 \node[dec, right=8mm of sum] (dec) {$S\!\ge\!\theta$};
-\node[out, right=7mm of dec, yshift=4.5mm, fill=black!78, text=white] (flag) {N+1};
-\node[out, right=7mm of dec, yshift=-4.5mm] (pass) {legit.};
+\node[verdict, right=7mm of dec, yshift=4.5mm, fill=black!78, text=white] (flag) {N+1};
+\node[verdict, right=7mm of dec, yshift=-4.5mm] (pass) {legit.};
 \draw[->] (sf.east) -- node[above,sloped,font=\tiny]{$w_f{=}.5$} (sum);
-\draw[->] (st.east) -- node[above,font=\tiny,pos=.55]{$.2$} (sum);
+\draw[->] (st.east) -- node[above,font=\tiny,pos=.55]{$w_t{=}.2$} (sum);
 \draw[->] (sl.east) -- node[below,sloped,font=\tiny]{$w_l{=}.3$} (sum);
 \draw[->] (sum) -- node[above,font=\tiny]{$S$} (dec);
 \draw[->] (dec.east) |- node[above,font=\tiny,pos=.75]{yes} (flag.west);
@@ -306,6 +317,12 @@ is \emph{not} treated as pagination, since it can be a genuine row-limited N+1.
 bounded signals, fused into $S\in[0,1]$ by fixed weights, and compared to a decision
 threshold $\theta$. Signal diversity is deliberate: no single signal decides alone, so a
 strong loop with weak framework evidence (or vice versa) is still scored on its merits.}
+\Description{Three input boxes labelled framework signal S-f (ORM and
+lazy-load frames), timing signal S-t (loop tightness), and location signal S-l
+(call-site proximity) feed into a summation node with weights 0.5, 0.2, and 0.3
+respectively. The sum S flows into a decision diamond testing whether S is at
+least theta; the yes branch outputs a verdict of N+1 and the no branch outputs
+legitimate.}
 \label{fig:confidence}
 \vspace{-10pt}
 \end{figure}
@@ -363,8 +380,8 @@ We answer four questions. \textbf{RQ1:} how accurate is \tool{} versus a
 count-based baseline? \textbf{RQ2:} does the confidence model add value over a
 simple threshold? \textbf{RQ3:} does it find real defects in unmodified code, and
 are its fixes effective? \textbf{RQ4:} what is its overhead? All experiments ship
-in a \code{query-analyzer-benchmark} module and run with one command; numbers
-below are from a commodity laptop. The controlled benchmark runs on H2,
+in a \code{query-analyzer-benchmark} module and run with one command
+(\code{./run-all.sh}); numbers below are from a commodity laptop. The controlled benchmark runs on H2,
 Hibernate~6.3, and Spring~Boot~3.2; the PetClinic case study (RQ3) uses
 PetClinic's last Spring~Boot~3 revision (commit \code{66747e3}).
 
@@ -426,7 +443,7 @@ sub-threshold repetition---for 0.40 precision. JPlusOne, run live, is precise
 (1.00) and correctly flags the lazy-collection N+1, but its model, by design,
 tracks only Hibernate lazy initialisations: it does not recognise an N+1
 expressed as a repository query-method invoked once per row, missing that case
-(0.50 recall, 0.67~F1), and it has no production mode. The live Hypersistence counter returns raw statement
+(0.50 recall, 0.67~F1), and it has no dedicated production reporting mode. The live Hypersistence counter returns raw statement
 counts (e.g.\ 6 for an N+1, 5 for legitimate pagination): a count alone cannot
 separate the two without a human-specified expected value, and it runs only in
 tests. \tool{} detects both N+1 forms and suppresses all legitimate repetition.
@@ -434,33 +451,64 @@ To check that detection is not Hibernate-bound, we also ran an N+1 written in
 \emph{plain JDBC} with no ORM (raw \code{PreparedStatement}, so the framework
 signal scores zero): all three modes still detect it, confirming the
 JDBC-layer design generalises beyond ORM stacks.
+Because aggregate scores over seven cases reveal little on their own,
+Table~\ref{tab:perscenario} reports the verdict every detector reached on every
+scenario, so each of the four errors above---JPlusOne's one missed N+1 and the
+baseline's three false alarms---is attributable to a specific named workload
+rather than inferred from a summary statistic.
 
 \begin{table}[t]
 \centering
 \caption{Detection accuracy on the labelled suite (7 scenarios; 2 true N+1, 5
 clean). JPlusOne and the count-based (QuickPerf-style) baseline are run live on
-the same stack; per-scenario verdicts and raw confusion counts are in the
-artifact.}
+the same stack. Table~\ref{tab:perscenario} gives the per-scenario breakdown.}
 \label{tab:accuracy}
 \small
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{lccc}
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lccccccc}
 \toprule
-Detector & Precision & Recall & F1 \\
+Detector & TP & FP & TN & FN & P & R & F1 \\
 \midrule
-\tool{} (all three modes)     & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} \\
-JPlusOne 2.0.0 (live)         & 1.00 & 0.50 & 0.67 \\
-Count-based baseline          & 0.40 & 1.00 & 0.57 \\
+\tool{} (all modes)  & 2 & 0 & 5 & 0 & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} \\
+JPlusOne 2.0.0       & 1 & 0 & 5 & 1 & 1.00 & 0.50 & 0.67 \\
+Count-based baseline & 2 & 3 & 2 & 0 & 0.40 & 1.00 & 0.57 \\
 \bottomrule
 \end{tabular}
 \vspace{-4pt}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Per-scenario verdicts behind Table~\ref{tab:accuracy}. Each row is one
+labelled workload; $|T|$ is its captured trace length in statements, and each
+detector column is the verdict that detector reached on that identical trace.
+\colorbox{gray!25}{Shaded} cells disagree with ground truth. \tool{}'s
+\textsc{Threshold}, \textsc{Confidence}, and \textsc{Hybrid} modes agree on
+every scenario, so they share one column (QA).}
+\label{tab:perscenario}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llcccc}
+\toprule
+Scenario & Truth & $|T|$ & QA & JPlusOne & Count \\
+\midrule
+Classic N+1 (lazy collection)  & N+1   & 6 & N+1   & N+1 & N+1 \\
+N+1 via query method           & N+1   & 6 & N+1   & \cellcolor{gray!25}clean & N+1 \\
+\texttt{JOIN FETCH} (optimized) & clean & 1 & clean & clean & clean \\
+Pagination loop                & clean & 5 & clean & clean & \cellcolor{gray!25}N+1 \\
+Streaming poll (timestamp)     & clean & 5 & clean & clean & \cellcolor{gray!25}N+1 \\
+Batched \texttt{IN} clause      & clean & 1 & clean & clean & clean \\
+Repeated below threshold       & clean & 2 & clean & clean & \cellcolor{gray!25}N+1 \\
+\bottomrule
+\end{tabular}
+\vspace{-6pt}
 \end{table}
 
 \noindent\textbf{RQ2 (model contribution).} On the suite above, \textsc{Threshold}
 and \textsc{Confidence} tie, because suppression alone handles those cases. To
 isolate the model we use a controlled study with one extra case class,
 \emph{scattered repeats} (the same query from several call sites in one request).
-Here a pure threshold false-positives (precision 0.60) while
+Here a pure threshold raises a false positive (precision 0.60) while
 \textsc{Confidence}/\textsc{Hybrid} reach 1.00. An ablation
 (Table~\ref{tab:ablation}) shows each signal earns its place: removing the
 framework signal costs precision; removing timing or location costs recall.
@@ -519,6 +567,12 @@ Sweeping the decision threshold $\theta$ (Fig.~\ref{fig:sensitivity}), F1 peaks 
 \end{tikzpicture}
 \vspace{-6pt}
 \caption{Sensitivity analysis sweeping the confidence threshold $\theta$. F1-score peaks at $[0.4, 0.5]$, justifying the choice of $\theta=0.5$.}
+\Description{A line chart with the confidence threshold theta from 0.1 to 0.9 on
+the horizontal axis and score from 0.5 to 1.0 on the vertical axis. Precision
+rises from 0.60 to 1.00 at theta equal to 0.4 and stays at 1.00. Recall holds at
+1.00 through theta equal to 0.5 then drops to 0.67. F1 is 0.75 for low
+thresholds, reaches 1.00 across theta of 0.4 to 0.5, and falls to 0.80
+thereafter, so F1 peaks on the interval 0.4 to 0.5.}
 \label{fig:sensitivity}
 \vspace{-10pt}
 \end{figure}
@@ -602,23 +656,20 @@ show, lack false-positive suppression and confidence scoring.
 Table~\ref{tab:accuracy} quantifies the resulting precision gap.
 
 %% ===========================================================================
-\section{Conclusion}
-%% ===========================================================================
-\tool{} brings framework-agnostic, confidence-based N+1 and slow-query detection
-to the JVM, usable both as a CI regression guard and in production, with
-actionable fixes.
-
-%% ===========================================================================
 \section{Tool Availability}
 %% ===========================================================================
-\tool{} is open-source (MIT). Source code, the benchmark module, the
-PetClinic case study, and
-reproduction instructions are at
-\url{https://github.com/query-analyzer/query-analyzer}; released binaries are on
-Maven Central (\code{io.github.query-analyzer}, v1.2.7).
-A demonstration video is at \url{VIDEO-URL} and an archived artifact snapshot at
-\url{https://doi.org/10.5281/zenodo.21586576}.
+\tool{} is open-source (MIT). For \emph{reproduction}, the archived
+package accompanying this paper---tool, benchmark module, PetClinic case
+study, and one-command reproduction instructions---is deposited on
+Zenodo~\cite{queryanalyzer-artifact}; that fixed deposit is the one all
+numbers reported here were produced with. For \emph{reuse} and
+continued development, the project is at
+\url{https://github.com/query-analyzer/query-analyzer}, with released
+binaries on Maven Central (\code{io.github.query-analyzer}). A
+demonstration video is at
+\url{https://www.youtube.com/watch?v=10EykUiJ7To}.
 
+\newpage
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
 

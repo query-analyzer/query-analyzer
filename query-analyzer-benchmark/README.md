@@ -59,6 +59,14 @@ outcome either way.
 
 ## How to run
 
+From the repository root, a single command runs every experiment:
+
+```bash
+./run-all.sh
+```
+
+That is equivalent to the two steps below, if you prefer to run them by hand:
+
 ```bash
 # 1. Build & install the library locally (publishes query-analyzer-core to ~/.m2)
 cd query-analyzer
